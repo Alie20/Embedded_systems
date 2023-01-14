@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;stm32f3xx_drivers/Inc/007arduino_spi_txOnly.c&apos;" deleteContents="false" description="Delete resource &apos;stm32f3xx_drivers/Inc/007arduino_spi_txOnly.c&apos;" element1="/stm32f3xx_drivers/Inc/007arduino_spi_txOnly.c" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1662889748219"/>
+</session>

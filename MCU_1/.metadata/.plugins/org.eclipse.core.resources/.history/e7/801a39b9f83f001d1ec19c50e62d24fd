@@ -1,0 +1,252 @@
+/*
+ * stm32f303re_I2C_driver.c
+ *
+ *  Created on: Sep 18, 2022
+ *      Author: alie
+ */
+
+#include <stm32f303re_I2C_driver.h>
+
+static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx);
+static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cx,uint8_t SlaveAddr);
+static void I2C_ClearADDFlag(I2C_RegDef_t *pI2Cx);
+static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx);
+
+
+static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx)
+{
+	pI2Cx->I2C_CR2 |= (1 << I2C_CR2_START);
+}
+
+static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx)
+{
+	pI2Cx->I2C_CR2 |= (1 << I2C_CR2_STOP);
+}
+static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cx,uint8_t SlaveAddr)
+{
+	//1. Addressing mode (7bit or 10 bit) ADD10 here we deal with 7 bits
+	pI2Cx->I2C_CR2 &= ~(1 << I2C_CR2_ADD10);
+
+	//2. slave address to be sent SADD[7:0]
+	SlaveAddr = (SlaveAddr << 1);
+	SlaveAddr &= ~(1) ;
+	pI2Cx->I2C_CR2 |= (SlaveAddr << I2C_CR2_SADD);
+
+	//3. Transfer Direction (Write Mode)
+	pI2Cx->I2C_CR2 &= ~(1<<I2C_CR2_RD_WRN);
+}
+
+static void I2C_ClearADDFlag(I2C_RegDef_t *pI2Cx)
+{
+	//clear ADDFLAG by setting bit
+	pI2Cx->I2C_ICR |= (1<<I2C_ICR_ADDRCF);
+}
+
+void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx , uint8_t EnorDi)
+{
+	if (EnorDi == Enable)
+	{
+		if (pI2Cx == I2C1)
+		{
+			I2C1_PCLK_EN();
+		}
+		else if (pI2Cx == I2C2)
+		{
+			I2C2_PCLK_EN();
+		}
+		else if (pI2Cx == I2C3)
+		{
+			I2C3_PCLK_EN();
+		}
+	}
+	else if (EnorDi == Disable)
+	{
+		if (pI2Cx == I2C1)
+		{
+			I2C1_PCLK_DI();
+		}
+		else if (pI2Cx == I2C2)
+		{
+			I2C2_PCLK_DI();
+		}
+		else if (pI2Cx == I2C3)
+		{
+			I2C3_PCLK_DI();
+		}
+	}
+
+}
+
+
+void I2C_Init(I2C_Handle_t *pI2Chandle)
+{
+	uint32_t tempreg = 0 ;
+	uint32_t tempreg2 = 0;
+	//Clear PE bit in I2C_CR1
+	pI2Chandle->pI2Cx->I2C_CR1 &= ~(1<<I2C_CR1_PE);
+	// configure ANFOFF Enable 0 disable 1
+	pI2Chandle->pI2Cx->I2C_CR1 &= ~(1<<I2C_CR1_ANFOFF);
+	//Configure DNF[3:0] in I2C_CR1 15 15tclk
+	pI2Chandle->pI2Cx->I2C_CR1 |= (15<<I2C_CR1_DNF);
+
+
+	//configure NOSTRETCH in I2C_CR1
+	if (pI2Chandle->I2C_config.NOSTRETCH == Clock_stretching_enabled)
+	{
+		tempreg |= pI2Chandle->pI2Cx->I2C_CR1<<I2C_CR1_NOSTRETCH;
+	}
+	else if (pI2Chandle->I2C_config.NOSTRETCH == Clock_stretching_disabled)
+	{
+		tempreg |= pI2Chandle->pI2Cx->I2C_CR1<<I2C_CR1_NOSTRETCH;
+	}
+
+	//configure PRESEC[3:0]
+	tempreg2 |= pI2Chandle->I2C_config.I2C_PRESC << I2C_TIMINGR_PRESC ;
+	//configure SDADEL[3:0],SCLDEL[3:0],SCLH[7:0],SCLL[7:0]
+	tempreg2 |= pI2Chandle->I2C_config.I2C_SDADEL<<I2C_TIMINGR_SDADEL;
+	tempreg2 |= pI2Chandle->I2C_config.I2C_SCLDEL<<I2C_TIMINGR_SCLDEL;
+	tempreg2 |= pI2Chandle->I2C_config.I2C_SCLH<<I2C_TIMINGR_SCLH;
+	tempreg2 |= pI2Chandle->I2C_config.I2C_SCLL<<I2C_TIMINGR_SCLL;
+
+	pI2Chandle->pI2Cx->I2C_CR1 = tempreg;
+	pI2Chandle->pI2Cx->I2C_TIMINGR = tempreg2;
+
+	pI2Chandle->pI2Cx->I2C_CR1 |= (1<<I2C_CR1_PE);
+
+
+
+
+
+	//configure the rise time for I2C Pins
+}
+
+void I2C_DeInit(I2C_RegDef_t *pI2Cx)
+{
+	if (pI2Cx == I2C1)
+	{
+		I2C1_REG_RESET();
+	}
+	else if (pI2Cx == I2C2)
+	{
+		I2C2_REG_RESET();
+	}
+	else if (pI2Cx == I2C3)
+	{
+		I2C3_REG_RESET();
+	}
+}
+
+uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t Flag_name)
+{
+	if (pI2Cx->I2C_ISR & Flag_name)
+	{
+		return FLAG_SET;
+	}
+	else
+	{
+		return FLAG_RESET;
+	}
+}
+
+void I2C_IRQInterruptConfig(uint8_t IRQNumber,uint8_t EnorDi)
+{
+	if (EnorDi == Enable)
+	{
+		if (IRQNumber <= 31)
+		{
+			// program ISER0 Register
+			*NVIC_ISER0 |= (1 << IRQNumber);
+		}
+		else if (IRQNumber > 31 && IRQNumber < 64)
+		{
+			// program ISER1 Register
+			*NVIC_ISER1 |= (1 << IRQNumber % 32 );
+		}
+		else if (IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// program ISER2 Register
+			*NVIC_ISER2 |= (1 << IRQNumber % 64);
+		}
+
+	}
+	else
+	{
+		if (IRQNumber <= 31)
+		{
+			*NVIC_ICER0 |= (1 << IRQNumber);
+		}
+		else if (IRQNumber > 31 && IRQNumber < 64)
+		{
+			*NVIC_ICER1 |= (1 << IRQNumber % 32);
+		}
+		else if (IRQNumber >= 64 && IRQNumber < 96)
+		{
+			*NVIC_ICER2 |= (1 << IRQNumber % 64);
+		}
+
+	}
+
+
+}
+void I2C_IRQPriortyConfig(uint8_t IRQNumber, uint32_t IRQPeriorty)
+{
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section = IRQNumber % 4;
+	uint8_t shift_number = (8 * iprx_section) + (8 - NO_PR_BITS_IMPLEMENTED);
+	*(NVIC_PR_BASE_ADDR + (iprx) ) |= ( IRQPeriorty << shift_number);
+
+}
+
+void I2C_PeripheralControl(I2C_RegDef_t *pI2Cx , uint8_t EnorDi)
+{
+	if (EnorDi == Enable)
+	{
+		pI2Cx->I2C_CR1 |= (1<< I2C_CR1_PE);
+	}
+	else
+	{
+		pI2Cx->I2C_CR1 &= ~(1<<I2C_CR1_PE);
+
+	}
+}
+void I2C_MasterSendData(I2C_Handle_t *pI2CHandle_t,uint8_t SlaveAddr,uint8_t *pTxBuffer,uint32_t len)
+{
+
+	// 1. Execute Address phase
+	I2C_ExecuteAddressPhase(pI2CHandle_t->pI2Cx,SlaveAddr);
+
+	//2. Checking number of bytes
+	if (len >= 255)
+	{
+		pI2CHandle_t->pI2Cx->I2C_CR2 |= (0xFF << I2C_CR2_NBYTES);
+	}
+	//3.Generate Start Condition
+	I2C_GenerateStartCondition(pI2CHandle_t->pI2Cx);
+
+	//4. Check the Address is correct
+	while(! I2C_GetFlagStatus(pI2CHandle_t->pI2Cx,I2C_FLAG_ADDR));
+
+	//5. Clear the Address flag
+	I2C_ClearADDFlag(pI2CHandle_t->pI2Cx);
+
+	//6 Check TXIS
+	while(! I2C_GetFlagStatus(pI2CHandle_t->pI2Cx,I2C_FLAG_TXIS));
+
+	//7 Sending data
+	while(len > 0)
+	{
+		pI2CHandle_t->pI2Cx->I2C_TXDR = pTxBuffer;
+		pTxBuffer++;
+		len--;
+	}
+
+	//8 Check the data completely transfered
+	while( I2C_GetFlagStatus(pI2CHandle_t->pI2Cx,I2C_FLAG_TC));
+
+	//9 stop condition
+	I2C_GenerateStopCondition(pI2CHandle_t->pI2Cx);
+
+
+}
+
+

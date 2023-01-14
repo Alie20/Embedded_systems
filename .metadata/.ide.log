@@ -1,0 +1,28 @@
+2022-07-17 15:36:15,909 [INFO] Activator:177 - 
+
+
+2022-07-17 15:36:15,914 [INFO] Activator:178 - !SESSION log4j initialized
+2022-07-17 15:36:22,647 [ERROR] AnalyticsContext:980 - The ST intranet updater server is unknown: mcucrossselector.codex.cro.st.com
+2022-07-17 15:38:10,515 [INFO] Activator:177 - 
+
+
+2022-07-17 15:38:10,520 [INFO] Activator:178 - !SESSION log4j initialized
+2022-07-17 15:38:17,764 [ERROR] AnalyticsContext:980 - The ST intranet updater server is unknown: mcucrossselector.codex.cro.st.com
+2022-07-18 08:36:52,595 [INFO] Activator:177 - 
+
+
+2022-07-18 08:36:52,598 [INFO] Activator:178 - !SESSION log4j initialized
+2022-07-18 08:37:01,957 [ERROR] ConfigurationRetriever:139 - IOException on connection: sw-center.st.com
+2022-07-18 08:37:01,965 [ERROR] ConfigurationRetriever:139 - IOException on connection: sw-center.st.com
+2022-07-18 08:37:01,966 [ERROR] ConfigurationRetriever:139 - IOException on connection: sw-center.st.com
+2022-07-18 08:37:07,609 [ERROR] ConfigurationRetriever:139 - IOException on connection: sw-center.st.com
+2022-07-18 08:37:07,614 [ERROR] ConfigurationRetriever:139 - IOException on connection: sw-center.st.com
+2022-07-18 08:37:07,615 [ERROR] ConfigurationRetriever:139 - IOException on connection: sw-center.st.com
+2022-12-04 16:27:19,595 [INFO] Activator:177 - 
+
+
+2022-12-04 16:27:19,597 [INFO] Activator:178 - !SESSION log4j initialized
+2022-12-04 16:27:56,562 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+2022-12-04 16:27:56,564 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: Defaulting to no-operation (NOP) logger implementation
+2022-12-04 16:27:56,565 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+2022-12-04 16:29:55,115 [ERROR] ConfigurationRetriever:139 - IOException on connection: Read timed out

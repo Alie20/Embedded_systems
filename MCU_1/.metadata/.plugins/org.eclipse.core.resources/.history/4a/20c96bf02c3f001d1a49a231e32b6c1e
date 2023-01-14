@@ -1,0 +1,127 @@
+/*
+ * stm32f303re_I2C_driver.h
+ *
+ *  Created on: Sep 18, 2022
+ *      Author: alie
+ */
+
+#ifndef INC_STM32F303RE_I2C_DRIVER_H_
+#define INC_STM32F303RE_I2C_DRIVER_H_
+
+
+#include "stm32f303re.h"
+
+typedef struct
+{
+	uint32_t I2C_SCLSPEED;
+	uint8_t I2C_DeviceAddress;
+	uint8_t I2C_AckControl;
+	uint8_t I2C_FmDutyCylce;
+	uint8_t I2C_PRESC;
+	uint8_t I2C_SDADEL;
+	uint8_t I2C_SCLDEL;
+	uint8_t I2C_SCLDEL;
+	uint8_t I2C_SCLH;
+	uint8_t I2C_SCLL;
+	uint8_t NOSTRETCH;
+
+}I2C_config_t;
+
+typedef struct
+{
+	I2C_RegDef_t *pI2Cx;
+	I2C_config_t I2C_config;
+
+}I2C_Handle_t;
+
+/*
+ * @I2C Speed
+ */
+
+#define I2C_SCL_SPEED_SM		1000000
+#define I2C_SCL_SPEED_FM2K		2000000
+#define I2c_SCL_SPEED_FM4K		4000000
+
+
+/*
+ * @I2C ACk
+ */
+
+#define I2C_ACK						0
+#define I2C_NACK					1
+
+/*
+ * @I2C SCL
+ */
+
+/*
+ * Peripheral Clock setup
+ */
+
+void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx , uint8_t EnorDi);
+
+/*
+ * Enable peripheral for I2C
+ */
+void I2C_PeripheralControl(I2C_RegDef_t *pSPIx , uint8_t EnorDi);
+
+/*
+ * Init and De-init
+ */
+void I2C_Init(I2C_Handle_t *pI2CHandle);
+void I2C_DeInit(I2C_RegDef_t *pI2Cx);
+
+/*
+ * Data send and receive
+ * Blocking and non blocking based
+ */
+void I2C_MasterSendData(I2C_Handle_t *pHandle_t,uint8_t SlaveAddr,uint8_t *pTxBuffer,uint32_t len);
+void I2C_ReceiveData(I2C_RegDef_t *pI2Cx,uint8_t *pRxBuffer,uint32_t len);
+
+uint8_t I2C_SendDataIT(I2C_Handle_t *pI2CHandle,uint8_t *pTxBuffer,uint32_t len);
+uint8_t I2C_ReceiveDataIT(I2C_Handle_t *pI2CHandle,uint8_t *pRxBuffer,uint32_t len);
+
+/*
+ * IRQ Configuration and ISR handling
+ */
+void I2C_IRQInterruptConfig(uint8_t IRQNumber,uint8_t EnorDi);
+void I2C_IRQPriortyConfig(uint8_t IRQNumber, uint32_t IRQPeriorty);
+
+
+uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t Flag_name);
+
+
+/*
+ * Applications Callback
+ */
+
+void I2C_ApplicationEventCallback(I2C_Handle_t *pI2CHandle,uint8_t event);
+
+
+/*
+ * I2c Related status flags
+ */
+#define I2C_FLAG_TXE		(1 << I2C_ISR_TXE)		// transmit buffer
+#define I2C_FLAG_RXNE  		(1 << I2C_ISR_RXNE)		// receive buffer
+#define I2C_FLAG_TXIS		(1 << I2C_ISR_TXIS)		// Transmit interrupt status
+#define I2C_FLAG_BUSY		(1 << I2C_ISR_BUSY)		// BUS Busy
+#define I2C_FLAG_NACK		(1 << I2C_ISR_NACKF)	//Not Acknowledge received flag
+#define I2C_FLAG_STOPF		(1 << I2C_ISR_STOPF)	//Stop flag detection
+#define I2C_FLAG_TC			(1 << I2C_ISR_TC)		//Transfer complete
+#define I2C_FLAG_TCR		(1 << I2C_ISR_TCR)		//Transfer Complete Reload
+#define I2C_FLAG_BUS_ERROR	(1 << I2C_ISR_BERR)		//Bus error
+#define I2C_FLAG_PECERR		(1 << I2C_ISR_PECERR)	//PEC error in Reception
+#define I2C_FLAG_OVR:		(1 << I2C_ISR_OVR)		//Overrun/Underrun
+#define I2C_FLAG_ARLO		(1 << I2C_ISR_ARLO)		//Arbitration Lost
+#define I2C_FLAG_ALERT		(1 << I2C_ISR_ALERT)	//SMBUS Alert
+#define I2C_FLAG_TIMEOUT	(1 << I2C_ISR_TIMOUT)	//Timeout or tlow detection flag
+#define I2C_FLAG_DIR		(1 << I2C_ISR_DIR)		//Transfer Direction
+#define I2C_ADDCODE			(1 << I2C_ISR_ADDCODE)	//Address Match code;
+
+
+
+
+
+
+
+#endif /* INC_STM32F303RE_I2C_DRIVER_H_ */

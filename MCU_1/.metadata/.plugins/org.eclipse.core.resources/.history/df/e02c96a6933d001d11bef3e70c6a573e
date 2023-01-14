@@ -1,0 +1,198 @@
+/*
+ * stm32f303re_I2C_driver.c
+ *
+ *  Created on: Sep 18, 2022
+ *      Author: alie
+ */
+
+#include <stm32f303re_I2C_driver.h>
+
+void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx , uint8_t EnorDi)
+{
+	if (EnorDi == Enable)
+	{
+		if (pI2Cx == I2C1)
+		{
+			I2C1_PCLK_EN();
+		}
+		else if (pI2Cx == I2C2)
+		{
+			I2C2_PCLK_EN();
+		}
+		else if (pI2Cx == I2C3)
+		{
+			I2C3_PCLK_EN();
+		}
+	}
+	else if (EnorDi == Disable)
+	{
+		if (pI2Cx == I2C1)
+		{
+			I2C1_PCLK_DI();
+		}
+		else if (pI2Cx == I2C2)
+		{
+			I2C2_PCLK_DI();
+		}
+		else if (pI2Cx == I2C3)
+		{
+			I2C3_PCLK_DI();
+		}
+	}
+
+}
+uint32_t RCC_GetOutputClock();
+
+uint18_t AHB_Prescaler[8] = {2,4,8,16,64,128,256,512};
+uint18_t APB1_Prescaler[4] = {2,4,8,16};
+
+uint32_t RCC_GetPCLK1Value(void)
+{
+	uint32_t pclk1;
+
+	uint8_t clksrc,temp,ahbp,apb1p;
+
+	uint32_t SystemClk;
+
+
+	clksrc = RCC->CFGR >> 2 & 0x03;
+
+	if (clksrc == 0)
+	{
+		SystemClk = 16000000;
+	}
+	else if (clksrc == 1)
+	{
+		SystemClk = 8000000;
+	}
+	else if (clksrc == 2)
+	{
+		SystemClk = RCC_GetOutputClock();
+	}
+
+	temp = (RCC->CFGR >> 4 & 0x0F);
+
+	if (temp < 8)
+	{
+		ahbp = 1;
+	}
+	else
+	{
+		ahbp = AHB_Prescaler[temp-8];
+	}
+
+	temp = (RCC->CFGR >> 8 & 0x07);
+
+	if (temp < 4)
+	{
+		apb1p = 1;
+	}
+	else
+	{
+		ahb1p = APB1_Prescaler[temp-4];
+	}
+	pclk1 = (SystemClk / ahbp) / apb1p;
+	return pclk1;
+}
+void I2C_Init(I2C_Handle_t *pI2Chandle)
+{
+	uint32_t tempreg = 0;
+	//Enable Acking
+	tempreg |= pI2Chandle->I2C_config.I2C_AckControl<<10;
+
+	//Configure the speed of the serial clock
+	tempreg = 0;
+	tempreg = RCC_GetPCLK1Value() / 1000000U;
+	//pI2Chandle->pI2Cx->I2C_CR2 |= (tempreg & 0x3F);
+	//configure the Mode (Standard_Fast)
+
+	//Configure the device address(applicable when device is slave)
+	tempreg = 0;
+	tempreg |= pI2Chandle->I2C_config.I2C_DeviceAddress << 1;
+	tempreg |= (1<<14);
+	pI2Chandle->pI2Cx->I2C_OAR1 = tempreg;
+
+
+	//configure the rise time for I2C Pins
+}
+
+void I2C_DeInit(I2C_RegDef_t *pI2Cx)
+{
+	if (pI2Cx == I2C1)
+	{
+		I2C1_REG_RESET();
+	}
+	else if (pI2Cx == I2C2)
+	{
+		I2C2_REG_RESET();
+	}
+	else if (pI2Cx == I2C3)
+	{
+		I2C3_REG_RESET();
+	}
+}
+
+
+void I2C_IRQInterruptConfig(uint8_t IRQNumber,uint8_t EnorDi)
+{
+	if (EnorDi == Enable)
+	{
+		if (IRQNumber <= 31)
+		{
+			// program ISER0 Register
+			*NVIC_ISER0 |= (1 << IRQNumber);
+		}
+		else if (IRQNumber > 31 && IRQNumber < 64)
+		{
+			// program ISER1 Register
+			*NVIC_ISER1 |= (1 << IRQNumber % 32 );
+		}
+		else if (IRQNumber >= 64 && IRQNumber < 96)
+		{
+			// program ISER2 Register
+			*NVIC_ISER2 |= (1 << IRQNumber % 64);
+		}
+
+	}
+	else
+	{
+		if (IRQNumber <= 31)
+		{
+			*NVIC_ICER0 |= (1 << IRQNumber);
+		}
+		else if (IRQNumber > 31 && IRQNumber < 64)
+		{
+			*NVIC_ICER1 |= (1 << IRQNumber % 32);
+		}
+		else if (IRQNumber >= 64 && IRQNumber < 96)
+		{
+			*NVIC_ICER2 |= (1 << IRQNumber % 64);
+		}
+
+	}
+
+
+}
+void I2C_IRQPriortyConfig(uint8_t IRQNumber, uint32_t IRQPeriorty)
+{
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section = IRQNumber % 4;
+	uint8_t shift_number = (8 * iprx_section) + (8 - NO_PR_BITS_IMPLEMENTED);
+	*(NVIC_PR_BASE_ADDR + (iprx) ) |= ( IRQPeriorty << shift_number);
+
+}
+
+void I2C_PeripheralControl(I2C_RegDef_t *pI2Cx , uint8_t EnorDi)
+{
+	if (EnorDi == Enable)
+	{
+		pI2Cx->I2C_CR1 |= (1<< I2C_CR1_PE);
+	}
+	else
+	{
+		pI2Cx->I2C_CR1 &= ~(1<<I2C_CR1_PE);
+
+	}
+}
+
+

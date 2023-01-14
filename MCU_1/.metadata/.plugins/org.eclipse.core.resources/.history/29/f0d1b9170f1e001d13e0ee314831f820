@@ -1,0 +1,61 @@
+#include<string.h>
+#include "stm32f303re.h"
+
+#define HIGH 1
+#define LOW 0
+#define BTN_PRESSED LOW
+
+void delay(void)
+{
+	// this will introduce ~200ms delay when system clock is 16MHz
+	for(uint32_t i = 0 ; i < 500000/2 ; i ++);
+}
+
+int main(void)
+{
+
+	GPIO_Handle_t GpioLed, GPIOBtn;
+
+	memset(&GpioLed,0,sizeof(GpioLed));
+	memset(&GPIOBtn,0,sizeof(GpioLed));
+
+	//this is led gpio configuration
+	GpioLed.pGPIOx = GPIOA;
+	GpioLed.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_12;
+	GpioLed.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_OUT;
+	GpioLed.GPIO_PinConfig.GPIO_PinSpeed = GPIO_SPEED_MEDIUM;
+	GpioLed.GPIO_PinConfig.GPIO_PinOPType = GPIO_OP_TYPE_PP;
+	GpioLed.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PU;
+
+	GPIO_PeriClockControl(GPIOA,ENABLE);
+
+	GPIO_Init(&GpioLed);
+
+
+	//this is btn gpio configuration
+	GPIOBtn.pGPIOx = GPIOA;
+	GPIOBtn.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_5;
+	GPIOBtn.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IT_FT;
+	GPIOBtn.GPIO_PinConfig.GPIO_PinSpeed = GPIO_SPEED_MEDIUM;
+	GPIOBtn.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_NO_PUPD;
+
+	GPIO_PeriClockControl(GPIOA,ENABLE);
+
+	GPIO_Init(&GPIOBtn);
+
+	GPIO_WriteToOutputPin(GPIOA,GPIO_PIN_NO_12,GPIO_PIN_RESET);
+	//IRQ configurations
+	GPIO_IRQPriorityConfig(IRQ_NO_EXTI5_9,NVIC_IRQ_PERIO15);
+	GPIO_IRQInterruptConfig(IRQ_NO_EXTI5_9,ENABLE);
+
+    while(1);
+
+}
+
+
+void EXTI9_5_IRQHandler(void)
+{
+   /// delay(); //200ms . wait till button de-bouncing gets over
+	GPIO_IRQHandling(GPIO_PIN_NO_5); //clear the pending event from exti line
+	GPIO_ToggleOutputPin(GPIOA,GPIO_PIN_NO_12);
+}
